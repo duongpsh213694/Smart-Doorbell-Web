@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-xxl">
+    <div class="row">
+        <div class="pt-5">
+            <!-- ###### Main Content ###### -->
+            <h2 class="pt-4 pb-2 mb-4 border-bottom">Thư viện video</h2>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal top fade modal-in-sidebar" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true" data-bs-backdrop="false">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteConfirmationModalLabel">Xác nhận xóa</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Bạn có muốn xóa video này không?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-danger" onclick="deleteVideoFromModal()">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                    {% for file_data in video_files %}
+                    <div class="col" id="card_{{ file_data['filename'] }}">
+                        <div class="card shadow-sm">
+                            <video controls preload="metadata" class="bd-placeholder-img card-img-top" width="100%">
+                                <source src="{{ url_for('static', filename='videos/' + file_data['filename']) }}" type="video/mp4">
+                                Trình duyệt không hỗ trợ video tag này!
+                            </video>
+                            <div class="card-body">
+                                <p class="card-text">Ngày quay: {{ file_data['timestamp'] }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            onclick="window.location.href='/view_video/{{ file_data['filename'] }}'">Xem</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="openDeleteConfirmationModal('{{ file_data['filename'] }}', 'card_{{ file_data['filename'] }}')">Xóa</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            onclick="window.location.href='/download_video/{{ file_data['filename'] }}'">Tải
+                                            về</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="clearfix">...</div>
+
+            <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    {% if page == 1 %}
+                    <li class="page-item disabled">
+                        <a class="page-link">Trước</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('video_gallery', page=page-1) }}">Trước</a>
+                    </li>
+                    {% endif %}
+                    {% for i in range(start_page, end_page + 1) %}
+                    <li class="page-item {% if i == page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('video_gallery', page=i) }}">{{ i }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if page == end_page %}
+                    <li class="page-item disabled">
+                        <a class="page-link">Sau</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('video_gallery', page=page+1) }}">Sau</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-in-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1051;
+    display: none;
+    overflow-y: auto;
+    background-color: transparent;
+}
+</style>
+
+<script>
+    function openDeleteConfirmationModal(filename, cardId) {
+        $('#deleteConfirmationModal').data('filename', filename);
+        $('#deleteConfirmationModal').data('card-id', cardId);
+        $('#deleteConfirmationModal').modal('show');
+    }
+
+	function deleteVideoFromModal() {
+		const filename = $('#deleteConfirmationModal').data('filename');
+		const cardId = $('#deleteConfirmationModal').data('card-id');
+
+		// Send DELETE request to delete the video
+		fetch(`/delete_video/${filename}`, {
+			method: 'DELETE'
+		})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					// Remove the video card from the gallery upon successful deletion
+					const card = document.getElementById(cardId);
+					if (card) {
+						card.remove();
+						$('#deleteConfirmationModal').modal('hide');
+					}
+				} else {
+					alert('Failed to delete video.');
+				}
+			})
+			.catch(error => console.error('Error deleting video:', error));
+	}
+</script>
+
+{% endblock %}

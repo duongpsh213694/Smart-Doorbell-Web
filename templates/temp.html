@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Custom CSS only for this page */
+    .feature-icon-small {
+        width: 3rem;
+        height: 3rem;
+    }
+    .feature-icon {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 0.75rem;
+    }
+    .list-group {
+        width: 100%;
+        max-width: 460px;
+        margin-inline: 1.5rem;
+    }
+    .form-check-input:checked + .form-checked-content {
+        opacity: .5;
+    }
+    .form-check-input-placeholder {
+        border-style: dashed;
+    }
+    [contenteditable]:focus {
+        outline: 0;
+    }
+    .list-group-checkable .list-group-item {
+        cursor: pointer;
+    }
+    .list-group-item-check {
+        position: absolute;
+        clip: rect(0, 0, 0, 0);
+    }
+    .list-group-item-check:hover + .list-group-item {
+        background-color: var(--bs-secondary-bg);
+    }
+    .list-group-item-check:checked + .list-group-item {
+        color: #fff;
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+    }
+    .list-group-item-check[disabled] + .list-group-item,
+    .list-group-item-check:disabled + .list-group-item {
+        pointer-events: none;
+        filter: none;
+        opacity: .5;
+    }
+    .list-group-radio .list-group-item {
+        cursor: pointer;
+        border-radius: .5rem;
+    }
+    .list-group-radio .form-check-input {
+        z-index: 2;
+        margin-top: -.5em;
+    }
+    .list-group-radio .list-group-item:hover,
+    .list-group-radio .list-group-item:focus {
+        background-color: var(--bs-secondary-bg);
+    }
+    .list-group-radio .form-check-input:checked + .list-group-item {
+        background-color: var(--bs-body);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 2px var(--bs-primary);
+    }
+    .list-group-radio .form-check-input[disabled] + .list-group-item,
+    .list-group-radio .form-check-input:disabled + .list-group-item {
+        pointer-events: none;
+        filter: none;
+        opacity: .5;
+    }
+</style>
+
+<div class="container-xxl">
+    <div class="container px-4 py-5 pt-5 pb-0 mt-4" id="custom-cards">
+        <h2 class="pb-2 border-bottom">Connected Camera Information</h2>
+        <div class="row row-cols-1 row-cols-md-2 g-5 py-5">
+            <div class="col d-flex flex-column align-items-center justify-content-center">
+                <div class="card mb-3" style="width: 18rem;">
+                    <img src="{{ url_for('static', filename='img/sensor_model.jpg') }}" alt="Sensor Model Image">
+                </div>
+                <h2 class="fw-bold text-body-emphasis">Camera Module Name</h2>
+                <p class="text-body-secondary">Manufacturer Sensor Model</p>
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-center">
+                    <div class="list-group list-group-radio d-grid gap-2 border-0">
+                        <div class="position-relative">
+                            <input class="form-check-input position-absolute top-50 end-0 me-3 fs-5" type="radio" name="sensor_mode" id="sensor_mode0" onclick="adjustCheckboxSetting('sensor_mode', '0')">
+                            <label class="list-group-item py-3 pe-5" for="sensor_mode0">
+                                <strong class="fw-semibold">Mode 0</strong>
+                                <span class="d-block small opacity-75">Resolution: 1920x1080</span>
+                                <span class="d-block small opacity-75">FPS: 30</span>
+                            </label>
+                        </div>
+                        <div class="position-relative">
+                            <input class="form-check-input position-absolute top-50 end-0 me-3 fs-5" type="radio" name="sensor_mode" id="sensor_mode1" onclick="adjustCheckboxSetting('sensor_mode', '1')">
+                            <label class="list-group-item py-3 pe-5" for="sensor_mode1">
+                                <strong class="fw-semibold">Mode 1</strong>
+                                <span class="d-block small opacity-75">Resolution: 1280x720</span>
+                                <span class="d-block small opacity-75">FPS: 60</span>
+                            </label>
+                        </div>
+                        <!-- Add more modes as needed -->
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row row-cols-1 row-cols-sm-2 g-4">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Megapixels</th>
+                                <td>12</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sensor Resolution</th>
+                                <td>4056x3040</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Video Modes</th>
+                                <td>1080p, 720p</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sensor Image Area</th>
+                                <td>7.4x5.6 mm</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Pixel Size</th>
+                                <td>1.55 µm</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Optical Size</th>
+                                <td>1/2.3"</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Focus</th>
+                                <td>Auto</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Depth of Field</th>
+                                <td>2 cm to infinity</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Focal Length</th>
+                                <td>4.67 mm</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Horizontal Field of View (FoV)</th>
+                                <td>62.2°</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Vertical Field of View (FoV)</th>
+                                <td>48.8°</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Focal Ratio (F-Stop)</th>
+                                <td>2.0</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Maximum Exposure Times (seconds)</th>
+                                <td>30</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Lens Mount</th>
+                                <td>CS-mount</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">NoIR version available?</th>
+                                <td>Yes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM content loaded');
+    var sensor_mode = 0;  // Default sensor mode
+    updateUI({ 'sensor_mode': sensor_mode });
+});
+
+const checkboxSettings = ['sensor_mode'];
+
+function updateUI(settings) {
+    for (const key in settings) {
+        if (checkboxSettings.includes(key)) {
+            console.log(settings[key]);
+            const checkboxes = document.getElementsByName(key);
+            checkboxes.forEach(checkbox => {
+                const checkboxValue = parseInt(checkbox.id.replace(key, ''));
+                checkbox.checked = settings[key] === checkboxValue;
+            });
+        } else {
+            console.log(`Skipping unknown setting: ${key}`);
+        }
+    }
+}
+
+function adjustCheckboxSetting(settingId, selection) {
+    const settingValue = parseInt(selection);
+    updateUI({ [settingId]: settingValue });
+    updateLiveSettings({ [settingId]: settingValue });
+    console.log(settingId, 'changed:', settingValue);
+}
+
+function updateLiveSettings(data) {
+    console.log(data);
+    return fetch('/update_live_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Settings updated:', data);
+        return data;
+    })
+    .catch(error => {
+        console.error('Error updating settings:', error);
+        throw error;
+    });
+}
+</script>
+
+{% endblock %}

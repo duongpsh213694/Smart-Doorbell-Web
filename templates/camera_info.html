@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Custom CSS only for this page */
+    .list-group-radio .list-group-item {
+        cursor: pointer;
+        border-radius: .5rem;
+    }
+    .list-group-radio .form-check-input {
+        z-index: 2;
+        margin-top: -.5em;
+    }
+    .list-group-radio .list-group-item:hover,
+    .list-group-radio .list-group-item:focus {
+        background-color: var(--bs-secondary-bg);
+    }
+    .list-group-radio .form-check-input:checked + .list-group-item {
+        background-color: var(--bs-body);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 2px var(--bs-primary);
+    }
+    .list-group-radio .form-check-input[disabled] + .list-group-item,
+    .list-group-radio .form-check-input:disabled + .list-group-item {
+        pointer-events: none;
+        filter: none;
+        opacity: .5;
+    }
+</style>
+
+
+<div class="container-xxl">
+    <div class="container px-4 py-5 pt-5 pb-0 mt-4" id="custom-cards">
+        <h2 class="pb-2 border-bottom">Thông số kỹ thuật của camera</h2>
+        <div class="row row-cols-1 row-cols-md-2 g-5 py-5">
+            <div class="col d-flex flex-column align-items-center justify-content-center">
+                <div class="card mb-3" style="width: 25rem;">
+                    <img src="{{ url_for('static', filename='image/picam_module2.jpg') }}" alt="Camera module 2">
+                </div>
+            </div>
+            <div class="col">
+                <div class="row row-cols-1 row-cols-sm-2 g-4">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Megapixels</th>
+                                <td>8</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Cảm biến ảnh</th>
+                                <td>Sony IMX219</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Độ phân giải cảm biến ảnh</th>
+                                <td>3280x2464 pixels</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Độ phân giải Video</th>
+                                <td>1080p47, 1640 × 1232p41 và 640 × 480p206</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Diện tích cảm biến ảnh</th>
+                                <td>3.68 x 2.76 mm</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Độ lớn của 1 pixel</th>
+                                <td>1.12 µm x 1.12 µm</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Tiêu cự</th>
+                                <td>3.04 mm</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Thời gian phơi sáng tối đa</th>
+                                <td>11.76s</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Góc nhìn ngang (FoV)</th>
+                                <td>62.2°</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Góc nhìn dọc (FoV)</th>
+                                <td>48.8°</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM content loaded');
+    var sensor_mode = 0;  // Default sensor mode
+    updateUI({ 'sensor_mode': sensor_mode });
+});
+
+const checkboxSettings = ['sensor_mode'];
+
+function updateUI(settings) {
+    for (const key in settings) {
+        if (checkboxSettings.includes(key)) {
+            console.log(settings[key]);
+            const checkboxes = document.getElementsByName(key);
+            checkboxes.forEach(checkbox => {
+                const checkboxValue = parseInt(checkbox.id.replace(key, ''));
+                checkbox.checked = settings[key] === checkboxValue;
+            });
+        } else {
+            console.log(`Skipping unknown setting: ${key}`);
+        }
+    }
+}
+
+function adjustCheckboxSetting(settingId, selection) {
+    const settingValue = parseInt(selection);
+    updateUI({ [settingId]: settingValue });
+    updateLiveSettings({ [settingId]: settingValue });
+    console.log(settingId, 'changed:', settingValue);
+}
+
+function updateLiveSettings(data) {
+    console.log(data);
+    return fetch('/update_live_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Settings updated:', data);
+        return data;
+    })
+    .catch(error => {
+        console.error('Error updating settings:', error);
+        throw error;
+    });
+}
+</script>
+
+{% endblock %}

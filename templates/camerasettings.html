@@ -1,0 +1,492 @@
+{% extends 'base.html' %} 
+
+{% block content %}
+<div class="container-xxl">
+    <div class="row">
+        <div class="col-lg-8 pt-5">
+            <!-- ###### Main Content ###### -->
+            <h2 class="pt-4 pb-2 mb-4 border-bottom">Camera Stream</h2>
+            <img class="img-fluid w-70 h-60" id="cameraImage" alt="Camera Feed" />
+            <div class="col-8">
+                <div id="captureAlert" class="alert" role="alert" style="display: none"></div>
+            </div>
+            <div class="col-8">
+                <div id="startRecordAlert" class="alert" role="alert" style="display: none;"></div>
+            </div>
+        </div>
+        <div class="col-lg-4 pt-5 pb-4" style="height: 100vh; height: -webkit-fill-available; max-height: 100vh; overflow-x: auto; overflow-y: hidden;">
+            <!-- ###### Side Bar ###### -->
+             <div class="d-grid gap-2 col-12">
+                <button type="button" class="btn btn-primary btn-success btn-lg" id="captureButton" onclick="capturePhoto()">
+                    Chụp ảnh
+                </button>
+                <button type="button" class="btn btn-primary btn-info btn-lg mt-3" id="videoButton" onclick="recordVideo()">
+                   Quay Video ngắn (10s)
+                </button>
+            </div>
+            <div class="accordion pt-4" id="accordionExample">
+                <!-- ###### Orientation Settings ###### -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#orientationSettings" aria-expanded="false" aria-controls="orientationSettings">
+                            Thiết lập cho Video
+                        </button>
+                    </h2>
+                    <div id="orientationSettings" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            <!-- Orientation -->
+                            <p>Quay hướng màn hình camera cho video</p>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="hflip" />
+                                <label class="form-check-label" for="hflip">Horizontal flip</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="vflip" />
+                                <label class="form-check-label" for="vflip">Vertical flip</label>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="adjustflip()">
+                                Lưu thiết lập
+                            </button>
+                            <!-- End of Line-->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ###### Camera Capture Settings ###### -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                            Thiết lập độ phân giải
+                        </button>
+                    </h2>
+                    <div id="collapseSix" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            <!-- Resolution -->
+                            <p>Lựa chọn độ phân giải cho camera</p>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution0" onclick="adjustResolution('Resolution', '0')">
+                                <label class="form-check-label" for="Resolution0">4608, 2592</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution1" onclick="adjustResolution('Resolution', '1')">
+                                <label class="form-check-label" for="Resolution1">2304, 1296</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution2" onclick="adjustResolution('Resolution', '2')">
+                                <label class="form-check-label" for="Resolution2">1920, 1080</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution3" onclick="adjustResolution('Resolution', '3')">
+                                <label class="form-check-label" for="Resolution3">1280, 720</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution4" onclick="adjustResolution('Resolution', '4')">
+                                <label class="form-check-label" for="Resolution4">640, 360</label>
+                            </div>
+                        <hr></hr>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM content loaded');
+
+    // Parse the JSON string into a JavaScript object
+    var liveSettings = {{ live_settings | tojson }};
+    var rotationSettings = {{ rotation_settings | tojson }};
+    var settings_from_camera = {{ settings_from_camera | tojson }};
+    var capture_settings = {{ capture_settings | tojson }};
+    console.log(liveSettings);
+    console.log(capture_settings);
+    // Call the updateUI
+
+    setrange(settings_from_camera);
+    updateUI(liveSettings);
+    updateUI(rotationSettings);
+    updateUI(capture_settings);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+        // Get the image element
+        const cameraImage = document.getElementById('cameraImage');
+
+        // Set the source attribute to start loading the image
+        cameraImage.src = "{{ url_for('video_feed') }}";
+    });
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize the camera video element
+    const cameraVideo = document.getElementById('cameraVideo');
+
+    // Start streaming the video feed
+    cameraVideo.srcObject = new MediaStream();
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            cameraVideo.srcObject = stream;
+        })
+        .catch(error => {
+            console.error('Error accessing camera:', error);
+        });
+});
+
+document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            // Page is visible, reload the camera feed
+            refreshCameraFeed();
+        }
+    });
+
+    const checkboxSettings = ['Resolution'];
+    const switchSettings = ['hflip', 'vflip'];
+
+function setrange(settings_from_camera) {
+    for (const key in settings_from_camera) {
+        const setting = settings_from_camera[key];
+        //console.log(`${key} setting: ${setting}`);
+        const min = setting[0];
+        const max = setting[1];
+        const defaultValue = setting[2]; 
+        if (inputSettings.includes(key)) {
+            const elementId = document.getElementById(key);
+            if (elementId) {
+                elementId.min = min;
+                elementId.max = max;
+                elementId.value = defaultValue;
+                const rangeElementId = document.getElementById(`${key}Range`);
+                rangeElementId.innerHTML = `Please enter a value between ${min} and ${max}`;
+            }
+        } else {
+            console.log(`Skipping setting: ${key}`);
+        }
+    }
+}
+
+function updateUI(settings) {
+    for (const key in settings) {
+        if (checkboxSettings.includes(key)) {
+                console.log(settings[key]);
+                console.log(settings);
+                // Update checkboxes
+                const checkboxes = document.getElementsByName(key);
+                console.log(checkboxes);
+                checkboxes.forEach(checkbox => {
+                    const checkboxValue = parseInt(checkbox.id.replace(key, ''));
+                    checkbox.checked = settings[key] === checkboxValue;
+                });
+            } else if (switchSettings.includes(key)) {
+                // Update the switch state
+                const switchbox = document.getElementById(key);
+                if (switchbox) {
+                    switchbox.checked = settings[key];
+                }
+            } else if (inputSettings.includes(key)) {
+                const input = document.getElementById(key);
+                if (input) {
+                    input.value = settings[key];
+                }
+            } else {
+                console.log(`Skipping unknown setting: ${key}`);
+            }
+    }
+}
+
+////////////////////////////////////
+// Live Settings 
+
+// Function to update server settings and UI
+function updateLiveSettings(data) {
+    console.log(data);
+    return fetch('/update_live_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Settings updated:', data);
+        // Return the data to the next chain
+        return data;
+    })
+    .catch(error => {
+        console.error('Error updating settings:', error);
+        throw error;  // Re-throw the error for the next catch
+    });
+}
+
+function adjustSwitchSetting(settingId) {
+    // Get the current state of the switch
+    const inputElement = document.getElementById(settingId);
+    const selection = inputElement.checked;
+    // Update server settings
+    updateLiveSettings({ [settingId]: selection });
+    // Notify console
+    console.log(settingId, 'changed:', selection);
+}
+
+function adjustCheckboxSetting(settingId, selection) {
+    // Convert settingValue to an integer
+    const settingValue = parseInt(selection);
+
+    // Update UI with the new value
+    updateUI({ [settingId]: settingValue });
+
+    // Update server settings and return the promise
+    return updateLiveSettings({ [settingId]: settingValue })
+        .then(() => {
+            // Notify console
+            console.log(settingId, 'changed:', settingValue);
+        });
+}
+
+// Function to update server settings and UI
+function resetsettings() {
+        fetch('/reset_default_live_settings')
+            .then(response => response.json())
+            .then(data => {
+        console.log('Settings received:', data);
+
+        // Access live_settings and restart_settings
+        const live_settings = data.data1;
+        const restart_settings = data.data2;
+
+        console.log('Data 1:', live_settings);
+        console.log('Data 2:', restart_settings);
+        // Update UI with live_settings
+        updateUI(live_settings);
+        updateUI(restart_settings);
+        refreshCameraFeed();
+    })
+    .catch(error => {
+        console.error('Error updating settings:', error);
+        throw error;  // Re-throw the error for the next catch
+    });
+}
+
+function saveSettings() {
+    fetch('/save_settings', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Settings saved:', data);
+        // You can display a message or update the UI as needed
+    })
+    .catch(error => {
+        console.error('Error saving settings:', error);
+        // Handle the error
+    });
+}
+
+////////////////////////////////////
+// Take a Picture functions
+
+let captureButton = document.getElementById('captureButton');
+let isButtonEnabled = true;
+
+function enableCaptureButton() {
+    isButtonEnabled = true;
+    captureButton.disabled = false;
+}
+
+
+function capturePhoto() {
+    if (!isButtonEnabled) {
+        return;
+    }
+
+    // Disable the button to prevent rapid presses
+    captureButton.disabled = true;
+    isButtonEnabled = false;
+    // Show alert based on the condition
+    const alertElement = document.getElementById('captureAlert');
+
+    // Call your capture_photo function here
+    fetch('/capture_photo', {
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle the success response here
+        console.log(data);
+
+        // Re-enable the button after a successful response
+        enableCaptureButton();
+        // Success alert
+        alertElement.className = 'alert alert-success';
+        alertElement.textContent = 'Chup anh thanh cong.';
+    })
+    .catch(error => {
+        // Handle the error response here
+        console.error('Error capturing photo:', error);
+        // Error alert
+        alertElement.className = 'alert alert-danger';
+        alertElement.textContent = 'Loi khi chup anh!';
+        // Re-enable the button in case of an error
+        enableCaptureButton();
+    });
+    alertElement.style.display = 'block';
+
+    // Optional: Hide the alert after a few seconds
+    setTimeout(() => {
+        alertElement.style.display = 'none';
+    }, 2000); // Adjust the time as needed
+}
+
+////////////////////////////////////
+// Quay video
+let videoButton = document.getElementById('videoButton');
+let isVideoButtonEnabled = true;
+
+function enableVideoButton() {
+    const alertElement = document.getElementById('startRecordAlert');
+    isVideoButtonEnabled = true;
+    videoButton.disabled = false;
+    
+    alertElement.className = 'alert alert-success';
+    alertElement.textContent = 'Da quay xong!';    
+    alertElement.style.display = 'block';
+
+    // Optional: Hide the alert after a few seconds
+    setTimeout(() => {
+        alertElement.style.display = 'none';
+    }, 2000); // Adjust the time as needed
+}
+
+function recordVideo() {
+    if (!isVideoButtonEnabled) {
+        return;
+    }
+
+    // Disable the button to prevent rapid presses
+    videoButton.disabled = true;
+    isVideoButtonEnabled = false;
+    // Show alert based on the condition
+    const alertElement = document.getElementById('startRecordAlert');
+    alertElement.className = 'alert alert-success';
+    alertElement.textContent = 'Bat dau quay!';
+    // Call your record_video function here
+    fetch('/record_video', {
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle the success response here
+        console.log(data);
+
+        // Re-enable the button after a successful response
+        enableVideoButton();
+        // Success alert
+        
+        refreshCameraFeed();
+        
+    })
+    .catch(error => {
+        // Handle the error response here
+        console.error('Lỗi khi quay video:', error);
+        // Error alert
+        alertElement.className = 'alert alert-danger';
+        alertElement.textContent = 'Lỗi khi quay video!';
+        // Re-enable the button in case of an error
+        enableVideoButton();
+    });
+    alertElement.style.display = 'block';
+
+    // Optional: Hide the alert after a few seconds
+    setTimeout(() => {
+        alertElement.style.display = 'none';
+    }, 2000); // Adjust the time as needed
+}
+
+////////////////////////////////////
+// Feed Restarting Settings 
+// Function to update server settings and UI
+function updateRestartSettings(data) {
+    return fetch('/update_restart_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Settings updated:', data);
+        // Update UI with the new settings
+        // updateUI(data);
+        // Return the data to the next chain
+        return data;
+    })
+    .catch(error => {
+        console.error('Error updating settings:', error);
+        throw error;  // Re-throw the error for the next catch
+    });
+}
+// Function to refresh the camera feed
+function refreshCameraFeed() {
+    const imageElement = document.getElementById('cameraImage');
+    if (imageElement) {
+    // Get the full resolution of the image
+    const fullResolutionWidth = imageElement.naturalWidth;
+    const fullResolutionHeight = imageElement.naturalHeight;
+
+    // Calculate the aspect ratio
+    const aspectRatio = fullResolutionWidth / fullResolutionHeight;
+
+    // Set the width to 100% and calculate the height based on the aspect ratio
+    imageElement.style.width = '100%';
+    imageElement.style.height = `${imageElement.offsetWidth / aspectRatio}px`;
+    cameraImage.src = `${cameraImage.src.split('?')[0]}?${new Date().getTime()}`;
+
+    }
+}
+
+function adjustResolution(settingId, selection) {
+    // Call adjustCheckboxSetting
+    adjustCheckboxSetting(settingId, selection)
+        .then(() => {
+            // The asynchronous part is done, now you can perform other tasks
+            refreshCameraFeed();
+        })
+        .catch(error => {
+            console.error('Error updating server settings:', error);
+            // Handle the error if needed
+        });
+}
+
+
+
+
+function adjustflip(mode) {
+    // Convert mode to an integer
+    const hflipswitch = document.getElementById('hflip');
+    const hflipValue = hflipswitch.checked ? 1 : 0;  // Convert true to 1, false to 0
+    const vflipswitch = document.getElementById('vflip');
+    const vflipValue = vflipswitch.checked ? 1 : 0;  // Convert true to 1, false to 0
+    // Update UI with the new value
+    updateUI({ hflip: hflipValue, vflip: vflipValue });
+    // Update server settings and wait for it to complete
+    updateRestartSettings({ hflip: hflipValue, vflip: vflipValue })
+        .then(() => {
+            // Refresh the camera feed after updating server settings
+            refreshCameraFeed();
+        })
+        .catch(error => {
+            console.error('Error updating server settings:', error);
+            // Handle the error if needed
+        });
+}
+
+</script>
+
+{% endblock %}
